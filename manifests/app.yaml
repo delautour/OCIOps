@@ -1,0 +1,67 @@
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: git
+  labels:
+      app: git
+spec:
+  selector:
+    matchLabels:
+      app: git
+  template:
+    metadata:
+      labels:
+        app: git
+    spec:
+      serviceAccountName: git
+      containers:
+      - name: git
+        image: ociops:latest
+        imagePullPolicy: Never
+        volumeMounts:
+        - name: git-repo
+          mountPath: /home/git
+      volumes:
+      - name: git-repo
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: git
+spec:
+  selector:
+      app: git
+  ports:
+  - protocol: TCP
+    port: 22
+    targetPort: 22
+---
+kind: ServiceAccount
+apiVersion: v1
+metadata:
+  name: git
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: git
+rules:
+- apiGroups: ["argoproj.io"]
+  resources: ["applications"]
+  verbs: ["get", "list", "watch"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: git
+subjects:
+- kind: ServiceAccount
+  name: git
+  namespace: default
+roleRef:
+  kind: ClusterRole
+  name: git
+  apiGroup: rbac.authorization.k8s.io
